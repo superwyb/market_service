@@ -22,6 +22,7 @@ var price_handler = function(monitor, handled, monitors, monitor_list,conn, res)
 			conn.release();
 			res.status(500).send('Database Error!'+err.code);
 		}else{
+
 			var params = JSON.parse(monitor.params);
 			var last_tick = tick_rows[0];
 
@@ -75,7 +76,16 @@ var monitor_handler = function(conn,monitors,res){
 	for (var index = 0; index< monitors.length; index++) {
 		if(typeof handlers[monitors[index].type] === 'function'){
 			(function(i){
-				price_handler(monitors[i],handled,monitors,monitor_list,conn,res);
+				// skip disabled monitor
+				if(monitors[index].status == 0){
+					monitor_list.push(monitors[index]);
+					if(monitor_list.length == monitors.length){
+						res.json(monitors);
+						conn.release();
+					}
+				}else{
+					price_handler(monitors[i],handled,monitors,monitor_list,conn,res);
+				}
 			})(index);
 		}
 		
@@ -97,8 +107,6 @@ router.get('/monitor', function(req, res, next) {
 
 /* add monitor */
 router.post('/monitor', function(req, res, next) {
-	console.log(req.body);
-	console.log(req.body.symbol);
 	mysql.getConnection(function(err, conn){
 		var query = conn.query('INSERT INTO trade_monitor SET ?', req.body, function(err, result) {
 			var res_json = {};
@@ -167,7 +175,10 @@ router.delete('/monitor/:monitor_id', function(req, res, next) {
 /* ticks */
 router.get('/tick', function(req, res, next) {
 	mysql.getConnection(function(err, conn){
-		conn.query("select * from trade_last_tick", function(err, rows) {
+		conn.query("select tick_id,symbol,CONVERT_TZ(tick_time,'+08:00','+00:00') as tick_time,CONVERT_TZ(tick_time_msc,'+08:00','+00:00') as tick_time_msc, bid, ask, update_time from trade_last_tick", function(err, rows) {
+			if( err != null){
+				res.status(500).json("Database Error!");
+			}
 			res.json(rows);
 			conn.release();
     	});

@@ -1,0 +1,47 @@
+<html>
+<head>
+	<script src="/js/angular.min.js"></script>
+</head>
+<body>
+<div ng-app="myApp" ng-controller="dashboardCtrl"> 
+<table>
+  <tr ng-repeat="x in ticks">
+    <td>{{ x.symbol }}</td>
+    <td>{{ x.bid }}</td>
+    <td>{{ x.ask }}</td>
+  </tr>
+</table>
+
+<table>
+  <tr ng-repeat="x in monitors">
+    <td>{{ x.symbol }}</td>
+    <td>{{ x.status }}</td>
+    <td>{{ x.type }}</td>
+    <td>{{ x.validator }}</td>
+    <td>{{ x.params }}</td>
+  </tr>
+</table>
+
+</div>
+
+<script>
+var app = angular.module('myApp', []);
+app.controller('dashboardCtrl', function($scope, $http,$interval) {
+    $http.get("/api/tick")
+    .then(function (response) {
+    	$scope.ticks = response.data
+    	$interval(
+    		function(){
+   				$http.get("/api/tick").then(function (response) {$scope.ticks = response.data});
+   				$http.get("/api/monitor").then(function (response) {$scope.monitors = response.data});
+    		},
+    		1000
+    	);
+    });
+
+});
+
+
+</script>
+</body>
+</html>
