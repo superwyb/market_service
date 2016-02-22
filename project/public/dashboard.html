@@ -91,6 +91,7 @@
             </table>
           </div>
           <h2 class="sub-header">Monitors</h2>
+          <button ng-click="add()">Add</button>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
@@ -104,15 +105,36 @@
               </thead>
               <tbody>
                 <tr ng-repeat="x in monitors">
-                  <td>{{ x.symbol }}</td>
+                  <form>
+                  <td>
+                    <div ng-hide="editingData[x.monitor_id]">{{ x.symbol }}</div>
+                    <div ng-show="editingData[x.monitor_id]"><input type="text" ng-model="x.symbol" /></div>
+                  </td>
                   <td>
                       <span ng-if="x.status  == 0" class="label label-default">Disabled</span>
                       <span ng-if="x.status  == 1" class="label label-primary">Monitoring</span>
                       <span ng-if="x.status  == 2" class="label label-danger">Triggered</span>
                   </td>
-                  <td>{{ x.type }}</td>
-                  <td>{{ x.validator }}</td>
-                  <td>{{ x.params }}</td>
+                  <td>
+                    <div ng-hide="editingData[x.monitor_id]">{{ x.type }}</div>
+                    <div ng-show="editingData[x.monitor_id]"><input type="text" ng-model="x.type" /></div>
+                  </td>
+                  <td>
+                    <div ng-hide="editingData[x.monitor_id]">{{ x.validator }}</div>
+                    <div ng-show="editingData[x.monitor_id]"><input type="text" ng-model="x.validator" /></div>
+                  </td>
+                  <td>
+                    <div ng-hide="editingData[x.monitor_id]">{{ x.params }}</div>
+                    <div ng-show="editingData[x.monitor_id]"><input type="text" ng-model="x.params" /></div>
+                  </td>
+                  <td>
+                      <button ng-hide="editingData[x.monitor_id]" ng-click="modify(x)">Modify</button>
+                      <button ng-show="editingData[x.monitor_id]" ng-click="update(x)">Update</button>
+                      <button ng-show="x.status>0" ng-click="disable(x)">Disable</button>
+                      <button ng-show="x.status==0" ng-click="enable(x)">Enable</button>
+                      <button ng-show="x.status==0" ng-click="remove(x)">Remove</button>
+                  </td>
+                </form>
                 </tr>
               </tbody>
             </table>
@@ -130,19 +152,54 @@
     <script src="/js/angular.min.js"></script>
     <script>
       var app = angular.module('myApp', []);
-      app.controller('dashboardCtrl', function($scope, $http,$interval) {
+      var isEditMonitor = false;
+      app.controller('dashboardCtrl', function($scope, $http, $interval) {
+          $scope.isEditMonitor = false;
           $http.get("/api/tick")
           .then(function (response) {
             $scope.ticks = response.data
             $interval(
               function(){
                 $http.get("/api/tick").then(function (response) {$scope.ticks = response.data});
+                if(!isEditMonitor){
                 $http.get("/api/monitor").then(function (response) {$scope.monitors = response.data});
+                }
               },
               1000
             );
           });
 
+          $http.get("/api/monitor").then(function (response) { 
+            $scope.monitors = response.data
+            $scope.editingData = {};
+            for (var i = 0, length = $scope.monitors.length; i < length; i++) {
+              $scope.editingData[$scope.monitors[i].monitor_id] = false;
+            }
+          });
+         
+          $scope.modify = function(tableData){
+            $scope.editingData[tableData.monitor_id] = true;
+            isEditMonitor = true;
+          };
+
+          $scope.update = function(tableData){
+              tableData.status = 1;
+              $http.put("/api/monitor/"+tableData.monitor_id,tableData).then(function (response) {console.log(response);isEditMonitor = false;});
+              $scope.editingData[tableData.monitor_id] = false;
+              
+          };
+
+          $scope.disable = function(tableData){
+              tableData.status = 0;
+              $http.put("/api/monitor/"+tableData.monitor_id,tableData).then(function (response) {console.log(response);isEditMonitor = false;});
+              $scope.editingData[tableData.monitor_id] = false;
+          };
+
+          $scope.enable = function(tableData){
+              tableData.status = 1;
+              $http.put("/api/monitor/"+tableData.monitor_id,tableData).then(function (response) {console.log(response);isEditMonitor = false;});
+              $scope.editingData[tableData.monitor_id] = false;
+          };
       });
 </script>
   </body>

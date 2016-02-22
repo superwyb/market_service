@@ -2,10 +2,6 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('./mysql').pool;
 
-
-
-
-
 var price_handler = function(monitor, handled, monitors, monitor_list,conn, res){
 	if(monitor === undefined || monitor == null || monitor.type != 'price'){
 		monitor.status = 0;
