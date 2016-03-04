@@ -1,0 +1,59 @@
+<html>
+<head>
+	<script src="/js/angular.min.js"></script>
+</head>
+<body>
+<div ng-app="gncu" ng-controller="gncuctrl">
+
+<form>
+Enable:<input type="checkbox" ng-model="option.enable" /> <br/>
+Lot:<input type="number" step="0.01" ng-model="option.lot" /> <br/>
+High:<input type="number" step="0.01" ng-model="option.high" /> <br/>
+Low:<input type="number" step="0.01" ng-model="option.low" /> <br/>
+Slip:<input type="number" ng-model="option.slip" /> <br/>
+<button ng-click="update(option)">Update</button><br/>
+{{ status }}
+</form>
+<ul>
+<li>P1: {{ gncu.p1}}</li>
+<li>P2: {{ gncu.p2}}</li>
+<li>P3: {{ gncu.p3}}</li>
+</ul>
+
+
+</div>
+
+<script>
+var app = angular.module('gncu', []);
+app.controller('gncuctrl', function($scope, $http,$interval) {
+    $http.get("/api/option")
+    .then(function (response) {
+    	$scope.option = response.data
+    	
+    });
+    $scope.update = function(option){
+      $http.put("/api/option",option).then(function (response) {
+        if(response.data){
+          $scope.status = response.data.result;
+        }else{
+          $scope.status = 'Failed';
+        }
+      });
+    };
+
+    $http.get("/api/gncu").then(function (response) {
+      $scope.gncu = response.data;
+      $interval(
+        function(){
+          $http.get("/api/gncu").then(function (response) {$scope.gncu = response.data});
+        },
+        5000
+      );
+    });
+
+});
+
+
+</script>
+</body>
+</html>

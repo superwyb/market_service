@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var mysql = require('./mysql').pool;
+var fs = require("fs");
+var config = require('./config').config;
 
 var price_handler = function(monitor, handled, monitors, monitor_list,conn, res){
 	if(monitor === undefined || monitor == null || monitor.type != 'price'){
@@ -179,6 +181,68 @@ router.get('/tick', function(req, res, next) {
 			conn.release();
     	});
 	});
+});
+
+
+/* option get */
+router.get('/option', function(req, res, next) {
+	fs.exists(config.option_path, function(exists){
+		if(!exists){
+			res.json({'result':'failed','code':'option_file_not_exists'});
+		}else{
+			fs.readFile(config.option_path, (err, data) => {
+	  			if (err) throw err;
+	  			var params = String(data).split(',');
+	  			res.json(
+	  				{'result':'success',
+	  				'enable':params[0]==='true',
+	  				'lot':Number(params[1]),
+	  				'high':Number(params[2]),
+	  				'low':Number(params[3]),
+	  				'slip':Number(params[4])
+	  			});
+			});
+		}
+	});
+	
+});
+
+/* option save */
+router.put('/option', function(req, res, next) {
+	var opt = req.body;
+	var list = [];
+	list.push(opt['enable']);
+	list.push(opt['lot']);
+	list.push(opt['high']);
+	list.push(opt['low']);
+	list.push(opt['slip']);
+	var str = list.join();
+	fs.writeFile(config.option_path, str, 'utf8',(err) => {
+  		if (err) throw err;
+  		res.json({'result':'success'});
+	});
+});
+
+/* GNCU Indicator get */
+router.get('/gncu', function(req, res, next) {
+	fs.exists(config.gncu_path, function(exists){
+		if(!exists){
+			res.json({'result':'failed','code':'option_file_not_exists'});
+		}else{
+			fs.readFile(config.gncu_path, (err, data) => {
+	  			if (err) throw err;
+	  			var params = String(data).split(',');
+	  			res.json(
+	  				{'result':'success',
+	  				'p1':Number(params[0]),
+	  				'p2':Number(params[1]),
+	  				'p3':Number(params[2])
+	  			});
+
+			});
+		}
+	});
+	
 });
 
 
