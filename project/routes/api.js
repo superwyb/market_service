@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var mysql = require('./mysql').pool;
+var mongodb = require('./mongodb').mongodb_client;
 var fs = require("fs");
 var config = require('./config').config;
 
@@ -241,6 +242,58 @@ router.get('/gncu', function(req, res, next) {
 
 			});
 		}
+	});
+	
+});
+
+/* GNCU Indicator get */
+router.get('/ticket', function(req, res, next) {
+	mongodb.connect(config.mongodb_url, function(err, db){
+		if (err) throw err;
+		var cursor =db.collection('ticket').find( );
+		var docs = [];
+		cursor.each(function(err, doc) {
+			if(err){
+				db.close();
+				throw err;
+			}
+      		if (doc != null) {
+         		docs.push(doc);
+      		} else {
+         		res.json(docs);
+         		db.close();
+      		}
+   		});
+	});
+	
+});
+
+router.post('/ticket', function(req, res, next) {
+	mongodb.connect(config.mongodb_url, function(err, db){
+		if (err) throw err;
+		db.collection('ticket').insertOne(req.body,function(err,result){
+			db.close();
+			if(err){	
+				throw err;
+			}
+			res.json(result);
+		});
+	});
+	
+});
+
+router.put('/ticket/:objid', function(req, res, next) {
+	mongodb.connect(config.mongodb_url, function(err, db){
+		if (err) throw err;
+		console.log(req.params.objid);
+		console.log(req.body);
+		db.collection('ticket').save(req.body,function(err,result){
+			db.close();
+			if(err){	
+				throw err;
+			}
+			res.json(result);
+		});
 	});
 	
 });
